@@ -1,32 +1,21 @@
-# Fase 00: Laboratorio base
-
-## Objetivo
-
-Montar un entorno virtual aislado con una máquina atacante (Kali Linux) y un
-objetivo vulnerable (Metasploitable 2), sobre el que se construirán las
-siguientes fases del proyecto.
-
-## Entorno
-
-- Hipervisor: Oracle VirtualBox
-- Red: NAT Network `SecLab`
-
 ---
 
-## 1. Creación de la red NAT "SecLab"
+## 3. Actualización del sistema y guest additions
 
-**Objetivo:** crear una red virtual donde las VMs se comuniquen entre sí y
-tengan salida a internet sin exponerse a la red local.
+**Objetivo:** dejar Kali actualizado y con integración con el host (portapapeles
+compartido y resolución automática).
 
-**Configuración:**
+```bash
+sudo apt update && sudo apt full-upgrade -y
+sudo apt install -y virtualbox-guest-x11
+sudo reboot
+```
 
-| Parámetro | Valor |
-|-----------|-------|
-| Nombre | SecLab |
-| Prefijo IPv4 | 10.0.2.0/24 |
-| DHCP | Habilitado |
-| IPv6 | Deshabilitado |
+![Actualización de Kali completada](../../evidence/00-setup/evidence00-setup-04-kali-update.png)
 
-![Configuración de la red SecLab](c:\Users\adria\OneDrive\Pictures\Screenshots\Network-Security-Lab\evidence00-setup01-natnetwork-seclab.png.png)
+**Resultado:** sistema actualizado y guest additions instaladas. Tras el
+reinicio, la VM conserva su IP en `SecLab`.
 
-**Resultado:** red `SecLab` creada y lista para conectar las VMs.
+**Snapshot:** se creó `Kali actualizado` como nuevo punto de restauración.
+
+![Snapshots de Kali](../../evidence/00-setup/evidence00-setup-05-kali-snapshot.png)
