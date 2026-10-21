@@ -1,0 +1,16 @@
+# Imágenes de VM e ISOs
+*.vdi
+*.vmdk
+*.ova
+*.iso
+*.vbox-prev
+
+# Secretos
+*.key
+*.pem
+*.env
+config.xml
+
+# Sistema
+.DS_Store
+Thumbs.db
