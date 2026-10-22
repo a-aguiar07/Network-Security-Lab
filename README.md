@@ -3,7 +3,7 @@
 Laboratorio de redes y ciberseguridad con segmentación, detección de intrusos
 y monitoreo, construido desde cero en un entorno aislado.
 
-> ⚠️ **Aviso:** todo este laboratorio se ejecuta en un entorno virtual aislado
+> **Aviso:** todo este laboratorio se ejecuta en un entorno virtual aislado
 > con fines educativos. Las máquinas vulnerables nunca se exponen a redes reales.
 
 ## Objetivo
