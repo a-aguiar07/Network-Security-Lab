@@ -15,7 +15,7 @@ fase con evidencia reproducible.
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
-| 00 | Lab base: Kali Linux + Metasploitable 2 | En progreso |
+| 00 | Lab base: Kali Linux + Metasploitable 2 | Terminado |
 | 01 | Diseño de red en Cisco Packet Tracer (VLANs, ACLs) | Pendiente |
 | 02 | Segmentación con pfSense | Pendiente |
 | 03 | Análisis de tráfico con Wireshark | Pendiente |
