@@ -82,6 +82,32 @@ asignado a la suya. Los puertos restantes permanecen en la VLAN `default`.
 
 ---
 
+## Diagnóstico: trunk sin enlace
+
+**Síntoma:** `show interfaces trunk` en SW1 no devolvía ninguna salida.
+
+**Proceso de diagnóstico (de configuración a capa física):**
+
+1. **Configuración del switch:** se verificó con
+   `show running-config | section interface GigabitEthernet0/1` que Gi0/1 tenía
+   `switchport mode trunk` y las VLANs 10, 20 y 30 permitidas. La
+   configuración era correcta.
+2. **Estado de la interfaz:** `show ip interface brief` mostró Gi0/1 en
+   `down/down`, lo que apuntaba a un problema de capa física, no de
+   configuración.
+3. **Otro extremo del enlace:** en la topología se confirmó que Gi0/1 conecta con
+   R1 (Cisco 2911), cuyas interfaces están apagadas por defecto.
+4. **Solución:** `no shutdown` en la interfaz Gi0/0 de R1. El enlace subió y
+   `show interfaces trunk` mostró Gi0/1 en estado `trunking` con las VLANs
+   10, 20 y 30 activas.
+
+**Aprendizaje:** un trunk correctamente configurado no aparece si el enlace está
+caído. Conviene diagnosticar por capas: primero comprobar el estado físico
+(`down/down`) y luego la configuración, y revisar siempre ambos extremos del
+enlace.
+
+---
+
 ## Problemas y soluciones
 
 | Problema | Causa | Solución |
@@ -89,12 +115,18 @@ asignado a la suya. Los puertos restantes permanecen en la VLAN `default`.
 | `% Invalid input detected` al usar `show` | El prompt estaba en modo configuración (`config-if`) | Escribir `end` para volver al modo privilegiado |
 | `Error copying nvram:yes` al guardar | Se escribió `yes` en vez de pulsar Enter en `Destination filename` | Pulsar Enter y aceptar el nombre por defecto |
 | El switch 2960 no tiene el puerto Fa0/30 | Error en el plan inicial: solo hay Fa0/1 a Fa0/24 | Usar Fa0/24 para el equipo atacante |
+| Trunk con `allowed vlan 10,20,24` | Se confundió el número de puerto (Fa0/24) con la VLAN 30 | Reescribir con `switchport trunk allowed vlan 10,20,30` |
+| `show interfaces trunk` salía vacío aunque el trunk estaba configurado | El enlace físico estaba caído: la interfaz Gi0/0 de R1 viene apagada por defecto | Ejecutar `no shutdown` en Gi0/0 de R1 |
+| `show running-config interface ...` daba `% Invalid input` | Ese IOS de Packet Tracer no acepta esa sintaxis | Usar `show running-config \| section interface GigabitEthernet0/1` |
+| `interface GigabitEthernet0/1` daba error | Se ejecutó desde modo privilegiado (`SW1#`) sin entrar antes a `configure terminal` | Entrar con `configure terminal` y luego a la interfaz |
 
 ## Próximos pasos
 
-- Configurar el trunk SW1 → R1 y las subinterfaces con `encapsulation dot1Q`.
-- Asignar direccionamiento IP y gateways por VLAN.
-- Implementar ACLs según la política de seguridad y validarlas con pruebas.
+- Confirmar las subinterfaces de R1 con `encapsulation dot1Q`.
+- Configurar IP y gateway en los equipos (PC-LAN, SRV-DMZ, PC-Kali).
+- Probar conectividad con `ping` entre VLANs.
+- Guardar la configuración (`copy running-config startup-config`) en R1 y SW1.
+- Implementar las ACLs y validarlas con pruebas.
 
 ---
 
@@ -128,3 +160,22 @@ interface GigabitEthernet0/0.30
 
 **Resultado:** el enlace SW1-R1 transporta las tres VLANs y R1 actúa como
 gateway de cada una (192.168.10.1, 192.168.20.1 y 192.168.30.1).
+
+---
+
+## 4. Direccionamiento y pruebas de conectividad (línea base)
+
+| Equipo | VLAN | IP | Gateway |
+|--------|------|----|---------|
+| PC-LAN | 10 | 192.168.10.10/24 | 192.168.10.1 |
+| SRV-DMZ | 20 | 192.168.20.10/24 | 192.168.20.1 |
+| PC-Kali | 30 | 192.168.30.10/24 | 192.168.30.1 |
+
+Pruebas sin ACLs, para tener una referencia antes de aplicar la política de seguridad:
+
+![Ping desde PC-LAN](../../evidence/01-packet-tracer/06-ping-baseline-lan.png)
+![Ping desde PC-Kali](../../evidence/01-packet-tracer/07-ping-baseline-kali.png)
+
+**Resultado:** el routing entre VLANs funciona; todos los equipos se alcanzan
+entre sí, incluido el atacante hacia LAN y DMZ. Esto es lo que las ACLs
+deben corregir.
