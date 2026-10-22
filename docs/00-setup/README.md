@@ -1,4 +1,4 @@
-# Fase 00: Laboratorio base
+# Fase 00: Laboratorio base | TERMINADA |
 
 ## Objetivo
 
