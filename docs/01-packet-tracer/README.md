@@ -95,3 +95,36 @@ asignado a la suya. Los puertos restantes permanecen en la VLAN `default`.
 - Configurar el trunk SW1 → R1 y las subinterfaces con `encapsulation dot1Q`.
 - Asignar direccionamiento IP y gateways por VLAN.
 - Implementar ACLs según la política de seguridad y validarlas con pruebas.
+
+---
+
+## 3. Trunk y routing entre VLANs (router-on-a-stick)
+
+**Trunk en SW1 (Gig0/1):**
+
+```
+interface GigabitEthernet0/1
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30
+```
+
+![Trunk](../../evidence/01-packet-tracer/04-show-interface-trunk.png)
+
+**Subinterfaces en R1 (gateways de cada VLAN):**
+
+```
+interface GigabitEthernet0/0.10
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+interface GigabitEthernet0/0.20
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+interface GigabitEthernet0/0.30
+ encapsulation dot1Q 30
+ ip address 192.168.30.1 255.255.255.0
+```
+
+![Interfaces de R1](../../evidence/01-packet-tracer/05-show-ip-interface-brief.png)
+
+**Resultado:** el enlace SW1-R1 transporta las tres VLANs y R1 actúa como
+gateway de cada una (192.168.10.1, 192.168.20.1 y 192.168.30.1).
