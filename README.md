@@ -3,7 +3,7 @@
 Laboratorio de redes y ciberseguridad con segmentación, detección de intrusos
 y monitoreo, construido desde cero en un entorno aislado.
 
-> ⚠️ **Aviso:** todo este laboratorio se ejecuta en un entorno virtual aislado
+> **Aviso:** todo este laboratorio se ejecuta en un entorno virtual aislado
 > con fines educativos. Las máquinas vulnerables nunca se exponen a redes reales.
 
 ## Objetivo
@@ -15,7 +15,7 @@ fase con evidencia reproducible.
 
 | Fase | Descripción | Estado |
 |------|-------------|--------|
-| 00 | Lab base: Kali Linux + Metasploitable 2 | En progreso |
+| 00 | Lab base: Kali Linux + Metasploitable 2 | Terminado |
 | 01 | Diseño de red en Cisco Packet Tracer (VLANs, ACLs) | Pendiente |
 | 02 | Segmentación con pfSense | Pendiente |
 | 03 | Análisis de tráfico con Wireshark | Pendiente |
