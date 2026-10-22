@@ -179,3 +179,50 @@ Pruebas sin ACLs, para tener una referencia antes de aplicar la política de seg
 **Resultado:** el routing entre VLANs funciona; todos los equipos se alcanzan
 entre sí, incluido el atacante hacia LAN y DMZ. Esto es lo que las ACLs
 deben corregir.
+
+---
+
+## 5. Política de seguridad con ACLs
+
+| Origen | Destino | Acción |
+|--------|---------|--------|
+| LAN | DMZ | Permitido |
+| ATACANTE | DMZ | Solo HTTP (puerto 80) |
+| ATACANTE | LAN | Bloqueado |
+| DMZ | LAN | Bloqueado |
+
+Se aplicaron ACLs extendidas con nombre en modo **inbound** en cada
+subinterfaz de R1. Al ser ACLs sin estado, la ACL de la DMZ permite
+explícitamente las respuestas (`echo-reply` y TCP `established`) para que LAN
+siga alcanzando los servicios de la DMZ.
+
+```
+ip access-list extended ATACANTE-IN
+ permit tcp 192.168.30.0 0.0.0.255 host 192.168.20.10 eq 80
+ deny ip 192.168.30.0 0.0.0.255 192.168.10.0 0.0.0.255
+ deny ip 192.168.30.0 0.0.0.255 192.168.20.0 0.0.0.255
+ permit ip 192.168.30.0 0.0.0.255 any
+```
+
+(Configuración completa de LAN-IN, DMZ-IN y ATACANTE-IN en `show access-lists`.)
+
+![ACLs](../../evidence/01-packet-tracer/08-show-access-lists.png)
+
+**Pruebas:**
+
+| Origen | Destino | Resultado |
+|--------|---------|-----------|
+| PC-LAN | SRV-DMZ (ping y web) | Permitido |
+| PC-Kali | SRV-DMZ (HTTP) | Permitido |
+| PC-Kali | SRV-DMZ (ping) | Bloqueado |
+| PC-Kali | PC-LAN | Bloqueado |
+| SRV-DMZ | PC-LAN | Bloqueado |
+
+![LAN a DMZ](../../evidence/01-packet-tracer/09-lan-a-dmz-permitido.png)
+![Kali web](../../evidence/01-packet-tracer/10-kali-web-permitido.png)
+![Kali bloqueado](../../evidence/01-packet-tracer/11-kali-ping-bloqueado.png)
+![DMZ a LAN bloqueado](../../evidence/01-packet-tracer/12-dmz-a-lan-bloqueado.png)
+
+**Resultado:** la política se cumple: el atacante solo alcanza el servicio web
+de la DMZ y no puede llegar a la LAN. La política es la base de las reglas que
+se implementarán con pfSense en la Fase 02.
