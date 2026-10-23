@@ -91,3 +91,56 @@ mismas subredes del diseño en Packet Tracer:
 **Resultado:** ambas VMs obtienen direccionamiento coherente con el diseño de
 la Fase 01. Los pings al gateway fallan porque pfSense bloquea por defecto el
 tráfico entrante en las interfaces OPT hasta que se crean reglas.
+
+---
+
+## 5. Alias de firewall
+
+Se crearon alias para dar nombres legibles a las redes y al servidor objetivo,
+de modo que las reglas se lean como la política de seguridad.
+
+| Alias | Tipo | Valor |
+|-------|------|-------|
+| `NET_LAN` | Network | 192.168.10.0/24 |
+| `NET_DMZ` | Network | 192.168.20.0/24 |
+| `NET_ATACANTE` | Network | 192.168.30.0/24 |
+| `SRV_MS2` | Host | 192.168.20.10 |
+
+![Alias de pfSense](../../evidence/02-pfsense/09-pfsense-aliases.png)
+
+---
+
+## 6. Reglas de firewall
+
+Misma política que las ACLs de la Fase 01. Las reglas se evalúan de arriba a
+abajo y se aplican a la entrada de cada interfaz. A diferencia de las ACLs de
+Cisco (sin estado), pfSense es un firewall con estado: las respuestas del
+tráfico permitido pasan solas, sin reglas `established` ni `echo-reply`.
+
+**Interfaz OPT2 (ATACANTE):**
+
+| # | Acción | Protocolo | Origen | Destino | Puerto | Descripción |
+|---|--------|-----------|--------|---------|--------|-------------|
+| 1 | Pass | TCP | `NET_ATACANTE` | `SRV_MS2` | 80 | Atacante a web de DMZ |
+| 2 | Block | Any | `NET_ATACANTE` | `NET_LAN` | any | Atacante a LAN bloqueado |
+| 3 | Block | Any | `NET_ATACANTE` | `NET_DMZ` | any | Atacante al resto de DMZ bloqueado |
+
+**Interfaz OPT1 (DMZ):**
+
+| # | Acción | Protocolo | Origen | Destino | Descripción |
+|---|--------|-----------|--------|---------|-------------|
+| 1 | Block | Any | `NET_DMZ` | `NET_LAN` | DMZ a LAN bloqueado |
+
+**Interfaz LAN:** se mantiene la regla por defecto (permitir todo), que cubre
+*LAN → DMZ permitido*.
+
+![Reglas de ATACANTE](../../evidence/02-pfsense/07-reglas-atacante.png)
+![Reglas de DMZ](../../evidence/02-pfsense/08-reglas-dmz.png)
+
+### Comparación con la Fase 01
+
+| Política | ACL en Cisco (Fase 01) | Regla en pfSense (Fase 02) |
+|----------|------------------------|----------------------------|
+| Atacante → DMZ solo HTTP | `permit tcp ... eq 80` + `deny ip` | Pass TCP 80 + Block |
+| Atacante → LAN | `deny ip` | Block |
+| DMZ → LAN | `deny` + permitir `established`/`echo-reply` | Block (el estado lo gestiona el firewall) |
