@@ -60,6 +60,7 @@ desde la consola de pfSense.
 |----------|-------|----------|
 | VirtualBox marcaba error en la ruta del ISO | 7-Zip creó una carpeta con el nombre `.iso` y el archivo real estaba dentro, así que la ruta salía duplicada | Mover el `.iso` un nivel arriba y seleccionarlo desde el explorador |
 | Tras instalar, la consola solo mostraba la WAN | El instalador solo configura WAN y LAN | Asignar todas las interfaces con la opción 1 de la consola |
+| `connect: Invalid argument` al hacer ping en MS2 | Se escribió `ping 3 IP` sin la opción `-c` | Usar `ping -c 3 IP` |
 
 ---
 
@@ -76,3 +77,17 @@ mismas subredes del diseño en Packet Tracer:
 | OPT2 (ATACANTE) | em3 | `intnet-atacante` | 192.168.30.1/24 | .100 a .200 |
 
 ![Consola de pfSense](../../evidence/02-pfsense/03-pfsense-interfaces.png)
+
+## 4. Conexión de Kali y Metasploitable 2
+
+| VM | Red interna | IP | Método |
+|----|-------------|----|--------|
+| Kali | `intnet-atacante` | 192.168.30.100 | DHCP de pfSense |
+| Metasploitable 2 | `intnet-dmz` | 192.168.20.10 | Estática |
+
+![Kali en la red del atacante](../../evidence/02-pfsense/04-kali-atacante-network.png)
+![MS2 en la DMZ](../../evidence/02-pfsense/05-ms2-dmz-network.png)
+
+**Resultado:** ambas VMs obtienen direccionamiento coherente con el diseño de
+la Fase 01. Los pings al gateway fallan porque pfSense bloquea por defecto el
+tráfico entrante en las interfaces OPT hasta que se crean reglas.
