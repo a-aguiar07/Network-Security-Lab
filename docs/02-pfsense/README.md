@@ -61,6 +61,7 @@ desde la consola de pfSense.
 | VirtualBox marcaba error en la ruta del ISO | 7-Zip creó una carpeta con el nombre `.iso` y el archivo real estaba dentro, así que la ruta salía duplicada | Mover el `.iso` un nivel arriba y seleccionarlo desde el explorador |
 | Tras instalar, la consola solo mostraba la WAN | El instalador solo configura WAN y LAN | Asignar todas las interfaces con la opción 1 de la consola |
 | `connect: Invalid argument` al hacer ping en MS2 | Se escribió `ping 3 IP` sin la opción `-c` | Usar `ping -c 3 IP` |
+| `curl` al puerto 80 de la DMZ daba timeout | La regla Pass estaba debajo de la Block `NET_DMZ` (gana la primera coincidencia) y, tras reordenarla, faltó pulsar `Apply Changes` | Mover la Pass al principio y aplicar los cambios; diagnóstico comparando con Kali-LAN, que sí alcanzaba MS2 |
 
 ---
 
@@ -144,3 +145,92 @@ tráfico permitido pasan solas, sin reglas `established` ni `echo-reply`.
 | Atacante → DMZ solo HTTP | `permit tcp ... eq 80` + `deny ip` | Pass TCP 80 + Block |
 | Atacante → LAN | `deny ip` | Block |
 | DMZ → LAN | `deny` + permitir `established`/`echo-reply` | Block (el estado lo gestiona el firewall) |
+
+---
+
+## 7. Reglas de firewall
+
+Misma política que las ACLs de la Fase 01. Las reglas se evalúan de arriba a
+abajo y gana la primera que coincide; se aplican a la entrada de cada
+interfaz. A diferencia de las ACLs de Cisco (sin estado), pfSense es un
+firewall con estado: las respuestas del tráfico permitido pasan solas, sin
+reglas `established` ni `echo-reply`.
+
+**Interfaz OPT2 (ATACANTE):**
+
+| # | Acción | Protocolo | Origen | Destino | Puerto | Descripción |
+|---|--------|-----------|--------|---------|--------|-------------|
+| 1 | Pass | TCP | `NET_ATACANTE` | `SRV_MS2` | 80 | Atacante a web de DMZ |
+| 2 | Block | Any | `NET_ATACANTE` | `NET_LAN` | any | Atacante a LAN bloqueado |
+| 3 | Block | Any | `NET_ATACANTE` | `NET_DMZ` | any | Atacante al resto de DMZ bloqueado |
+
+**Interfaz OPT1 (DMZ):**
+
+| # | Acción | Protocolo | Origen | Destino | Descripción |
+|---|--------|-----------|--------|---------|-------------|
+| 1 | Block | Any | `NET_DMZ` | `NET_LAN` | DMZ a LAN bloqueado |
+
+**Interfaz LAN:** se mantiene la regla por defecto (permitir todo), que cubre
+*LAN → DMZ permitido*.
+
+> El orden es crítico: la regla Pass del puerto 80 debe ir **antes** de la
+> regla Block de `NET_DMZ`, porque `SRV_MS2` pertenece a esa red.
+
+![Reglas de ATACANTE](../../evidence/02-pfsense/07-reglas-atacante.png)
+![Reglas de DMZ](../../evidence/02-pfsense/08-reglas-dmz.png)
+
+### Comparación con la Fase 01
+
+| Política | ACL en Cisco (Fase 01) | Regla en pfSense (Fase 02) |
+|----------|------------------------|----------------------------|
+| Atacante → DMZ solo HTTP | `permit tcp ... eq 80` + `deny ip` | Pass TCP 80 + Block |
+| Atacante → LAN | `deny ip` | Block |
+| DMZ → LAN | `deny` + permitir `established`/`echo-reply` | Block (el estado lo gestiona el firewall) |
+
+---
+
+## 8. Validación de la política
+
+Se validó la política con el Kali real del laboratorio.
+
+**Atacante → DMZ** (`curl` y `nmap -sV -Pn 192.168.20.10`):
+
+```bash
+curl -I --max-time 5 http://192.168.20.10
+nmap -sV -Pn -oN pfsense-atacante-dmz.txt 192.168.20.10
+```
+
+![curl y Nmap desde el atacante](../../evidence/02-pfsense/11-atacante-nmap-dmz.png)
+
+| | Fase 00 (red plana) | Fase 02 (pfSense) |
+|---|---|---|
+| Puertos abiertos | 23 | 1 (80/tcp) |
+| Estado del resto | closed (responden RST) | filtered (sin respuesta) |
+
+**Resultado:** el atacante solo alcanza el servicio web de la DMZ. La
+superficie de ataque pasó de 23 a 1 puerto (96 % menos), y el firewall
+descarta el resto sin responder, lo que dificulta el reconocimiento.
+
+**Pruebas de la política:**
+
+| Origen | Destino | Esperado | Resultado |
+|--------|---------|----------|-----------|
+| Atacante | DMZ | Solo 80/tcp | ✅ 1 puerto abierto, 999 `filtered` |
+| Atacante | LAN | Bloqueado | ✅ Puertos `filtered` y ping sin respuesta |
+| LAN | DMZ | Permitido | ✅ 23 puertos abiertos |
+| DMZ | LAN | Bloqueado | ✅ 100% de pérdida de paquetes |
+
+![Atacante a LAN bloqueado](../../evidence/02-pfsense/12-atacante-bloqueado.png)
+![LAN a DMZ permitido](../../evidence/02-pfsense/13-lan-nmap-dmz.png)
+![DMZ a LAN bloqueado](../../evidence/02-pfsense/15-dmz-lan-bloqueado.png)
+
+**Evidencia en los logs del firewall:** con *Log packets* activado en las reglas
+Block, pfSense registra los intentos del atacante hacia la LAN, identificados
+con el nombre de la regla (*Atacante a LAN bloqueado*) y no con la regla por
+defecto.
+
+![Logs de bloqueo](../../evidence/02-pfsense/14-pfsense-logs-bloqueo.png)
+
+**Conclusión:** la política diseñada en Packet Tracer se reproduce en pfSense
+con herramientas reales: el atacante solo alcanza el puerto 80 de la DMZ, no
+llega a la LAN, y la DMZ no puede iniciar conexiones hacia la LAN.
