@@ -17,8 +17,8 @@ fase con evidencia reproducible.
 |------|-------------|--------|
 | 00 | Lab base: Kali Linux + Metasploitable 2 | Terminado |
 | 01 | Diseño de red en Cisco Packet Tracer (VLANs, ACLs) | Terminado |
-| 02 | Segmentación con pfSense | En progreso |
-| 03 | Análisis de tráfico con Wireshark | Pendiente |
+| 02 | Segmentación con pfSense | Terminado |
+| 03 | Análisis de tráfico con Wireshark | En progreso |
 | 04 | IDS con Suricata | Pendiente |
 | 05 | VPN con WireGuard | Pendiente |
 | 06 | Monitoreo con Wazuh | Pendiente |
