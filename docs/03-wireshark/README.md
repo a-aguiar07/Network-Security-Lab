@@ -61,3 +61,32 @@ silencio.
 **Aprendizaje:** el firewall no solo reduce los puertos alcanzables; también
 cambia lo que el atacante puede deducir, porque descartar sin responder
 oculta si el puerto existe.
+
+---
+
+## 3. Huella de `nmap -sV` en tráfico HTTP
+
+```bash
+nmap -sV -Pn -p 80 192.168.20.10
+```
+
+Filtro: `http`
+
+![Sondas HTTP de nmap -sV](../../evidence/03-wireshark/04-nmap-sv-http.png)
+
+La detección de versiones envía en medio segundo una ráfaga de peticiones a
+rutas que ningún usuario legítimo pediría:
+
+| Petición | Finalidad |
+|----------|-----------|
+| `GET / HTTP/1.0` | Sonda inicial con HTTP/1.0 |
+| `POST /sdk` | Busca servicios VMware |
+| `GET /nmaplowercheck...` | Sonda de prueba con "nmap" en la ruta |
+| `GET /evox/about` | Sonda de otro servicio |
+| `GET /HNAP1` | Sonda de routers (HNAP) |
+
+El servidor responde `200 OK` a la raíz y `404 Not Found` a casi todo lo demás.
+
+**Aprendizaje:** el patrón de muchas peticiones a rutas inexistentes en pocos
+milisegundos, y la ruta `/nmaplowercheck`, son firmas detectables. Servirán
+como base para las reglas de Suricata de la Fase 04.
