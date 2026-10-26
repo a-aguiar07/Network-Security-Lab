@@ -31,3 +31,33 @@ Filtro: `tcp.port == 47052`
 
 La trama del atacante lleva como MAC de destino la interfaz del firewall
 (`em3`), no la de MS2: todo el tráfico entre zonas pasa por pfSense.
+
+---
+
+## 2. Escaneo SYN: puerto abierto frente a filtrado
+
+```bash
+sudo nmap -sS -Pn -p 80,81 192.168.20.10
+```
+
+**Puerto 80 (abierto):** el atacante envía `[SYN]`, MS2 responde `[SYN, ACK]` y
+Nmap corta con `[RST]` sin completar el handshake (escaneo *half-open*).
+
+![Puerto abierto](../../evidence/03-wireshark/02-nmap-puerto-abierto.png)
+
+**Puerto 81 (filtrado):** el `[SYN]` no recibe ninguna respuesta. Nmap lo
+reenvía una vez desde otro puerto de origen (36632 y 36634) y, al no obtener
+respuesta, marca el puerto como `filtered`. pfSense descarta el paquete en
+silencio.
+
+![Puerto filtrado](../../evidence/03-wireshark/03-nmap-puerto-filtrado.png)
+
+| Estado | Respuesta en la red |
+|--------|---------------------|
+| Abierto | `[SYN, ACK]` |
+| Cerrado (Fase 00, red plana) | `[RST, ACK]` |
+| Filtrado (Fase 02, con firewall) | Ninguna: solo `[SYN]` sin respuesta |
+
+**Aprendizaje:** el firewall no solo reduce los puertos alcanzables; también
+cambia lo que el atacante puede deducir, porque descartar sin responder
+oculta si el puerto existe.
