@@ -215,10 +215,10 @@ descarta el resto sin responder, lo que dificulta el reconocimiento.
 
 | Origen | Destino | Esperado | Resultado |
 |--------|---------|----------|-----------|
-| Atacante | DMZ | Solo 80/tcp | ✅ 1 puerto abierto, 999 `filtered` |
-| Atacante | LAN | Bloqueado | ✅ Puertos `filtered` y ping sin respuesta |
-| LAN | DMZ | Permitido | ✅ 23 puertos abiertos |
-| DMZ | LAN | Bloqueado | ✅ 100% de pérdida de paquetes |
+| Atacante | DMZ | Solo 80/tcp | 1 puerto abierto, 999 `filtered` |
+| Atacante | LAN | Bloqueado | Puertos `filtered` y ping sin respuesta |
+| LAN | DMZ | Permitido | 23 puertos abiertos |
+| DMZ | LAN | Bloqueado | 100% de pérdida de paquetes |
 
 ![Atacante a LAN bloqueado](../../evidence/02-pfsense/12-atacante-bloqueado.png)
 ![LAN a DMZ permitido](../../evidence/02-pfsense/13-lan-nmap-dmz.png)
@@ -233,4 +233,4 @@ defecto.
 
 **Conclusión:** la política diseñada en Packet Tracer se reproduce en pfSense
 con herramientas reales: el atacante solo alcanza el puerto 80 de la DMZ, no
-llega a la LAN, y la DMZ no puede iniciar conexiones hacia la LAN.
+llega a la LAN, y la DMZ no puede iniciar conexiones hacia la LAN.     
