@@ -90,3 +90,33 @@ El servidor responde `200 OK` a la raíz y `404 Not Found` a casi todo lo demás
 **Aprendizaje:** el patrón de muchas peticiones a rutas inexistentes en pocos
 milisegundos, y la ruta `/nmaplowercheck`, son firmas detectables. Servirán
 como base para las reglas de Suricata de la Fase 04.
+
+---
+
+## 4. Fuerza bruta contra el login de DVWA
+
+```bash
+hydra -l admin -P /tmp/pass.txt -t 4 192.168.20.10 http-post-form \
+"/dvwa/login.php:username=^USER^&password=^PASS^&Login=Login:F=Login failed"
+```
+
+![Resultado de Hydra](../../evidence/03-wireshark/07-hydra-resultado.png)
+
+Hydra probó 5 contraseñas contra el usuario `admin` y encontró la credencial
+válida (`password`) en el segundo intento.
+
+**Tráfico capturado** (filtro `http.request.method == POST`):
+
+![Peticiones POST de Hydra](../../evidence/03-wireshark/05-hydra-post-requests.png)
+
+Se observan 5 peticiones `POST /dvwa/login.php` en pocos segundos, cada una
+con el mismo usuario y una contraseña distinta.
+
+![Credenciales en texto plano](../../evidence/03-wireshark/06-hydra-credenciales-texto-plano.png)
+
+**Aprendizaje:** al ser HTTP sin cifrar, las credenciales de cada intento
+viajan en texto plano y son visibles para cualquiera que capture el tráfico,
+incluida la que tuvo éxito. El patrón de múltiples peticiones al mismo
+endpoint en pocos segundos, con el mismo campo `username`, es la firma
+típica de fuerza bruta y servirá de base para las reglas de Suricata en la
+Fase 04.
